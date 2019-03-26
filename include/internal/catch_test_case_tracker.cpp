@@ -10,7 +10,7 @@
 #include "catch_enforce.h"
 
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 #include <stdexcept>
 #include <memory>
 #include <sstream>
@@ -69,14 +69,6 @@ namespace TestCaseTracking {
     }
 
 
-
-    TrackerBase::TrackerHasName::TrackerHasName( NameAndLocation const& nameAndLocation ) : m_nameAndLocation( nameAndLocation ) {}
-    bool TrackerBase::TrackerHasName::operator ()( ITrackerPtr const& tracker ) const {
-        return
-            tracker->nameAndLocation().name == m_nameAndLocation.name &&
-            tracker->nameAndLocation().location == m_nameAndLocation.location;
-    }
-
     TrackerBase::TrackerBase( NameAndLocation const& nameAndLocation, TrackerContext& ctx, ITracker* parent )
     :   m_nameAndLocation( nameAndLocation ),
         m_ctx( ctx ),
@@ -105,7 +97,12 @@ namespace TestCaseTracking {
     }
 
     ITrackerPtr TrackerBase::findChild( NameAndLocation const& nameAndLocation ) {
-        auto it = std::find_if( m_children.begin(), m_children.end(), TrackerHasName( nameAndLocation ) );
+        auto it = std::find_if( m_children.begin(), m_children.end(),
+            [&nameAndLocation]( ITrackerPtr const& tracker ){
+                return
+                    tracker->nameAndLocation().location == nameAndLocation.location &&
+                    tracker->nameAndLocation().name == nameAndLocation.name;
+            } );
         return( it != m_children.end() )
             ? *it
             : nullptr;
@@ -124,7 +121,7 @@ namespace TestCaseTracking {
     }
 
     bool TrackerBase::isSectionTracker() const { return false; }
-    bool TrackerBase::isIndexTracker() const { return false; }
+    bool TrackerBase::isGeneratorTracker() const { return false; }
 
     void TrackerBase::open() {
         m_runState = Executing;
@@ -193,6 +190,17 @@ namespace TestCaseTracking {
         }
     }
 
+    bool SectionTracker::isComplete() const {
+        bool complete = true;
+
+        if ((m_filters.empty() || m_filters[0] == "") ||
+             std::find(m_filters.begin(), m_filters.end(),
+                       m_nameAndLocation.name) != m_filters.end())
+            complete = TrackerBase::isComplete();
+        return complete;
+
+    }
+
     bool SectionTracker::isSectionTracker() const { return true; }
 
     SectionTracker& SectionTracker::acquire( TrackerContext& ctx, NameAndLocation const& nameAndLocation ) {
@@ -230,55 +238,11 @@ namespace TestCaseTracking {
             m_filters.insert( m_filters.end(), ++filters.begin(), filters.end() );
     }
 
-    IndexTracker::IndexTracker( NameAndLocation const& nameAndLocation, TrackerContext& ctx, ITracker* parent, int size )
-    :   TrackerBase( nameAndLocation, ctx, parent ),
-        m_size( size )
-    {}
-
-    bool IndexTracker::isIndexTracker() const { return true; }
-
-    IndexTracker& IndexTracker::acquire( TrackerContext& ctx, NameAndLocation const& nameAndLocation, int size ) {
-        std::shared_ptr<IndexTracker> tracker;
-
-        ITracker& currentTracker = ctx.currentTracker();
-        if( ITrackerPtr childTracker = currentTracker.findChild( nameAndLocation ) ) {
-            assert( childTracker );
-            assert( childTracker->isIndexTracker() );
-            tracker = std::static_pointer_cast<IndexTracker>( childTracker );
-        }
-        else {
-            tracker = std::make_shared<IndexTracker>( nameAndLocation, ctx, &currentTracker, size );
-            currentTracker.addChild( tracker );
-        }
-
-        if( !ctx.completedCycle() && !tracker->isComplete() ) {
-            if( tracker->m_runState != ExecutingChildren && tracker->m_runState != NeedsAnotherRun )
-                tracker->moveNext();
-            tracker->open();
-        }
-
-        return *tracker;
-    }
-
-    int IndexTracker::index() const { return m_index; }
-
-    void IndexTracker::moveNext() {
-        m_index++;
-        m_children.clear();
-    }
-
-    void IndexTracker::close() {
-        TrackerBase::close();
-        if( m_runState == CompletedSuccessfully && m_index < m_size-1 )
-            m_runState = Executing;
-    }
-
 } // namespace TestCaseTracking
 
 using TestCaseTracking::ITracker;
 using TestCaseTracking::TrackerContext;
 using TestCaseTracking::SectionTracker;
-using TestCaseTracking::IndexTracker;
 
 } // namespace Catch
 

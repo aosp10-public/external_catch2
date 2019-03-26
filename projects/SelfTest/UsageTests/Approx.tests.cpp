@@ -33,14 +33,30 @@ namespace { namespace ApproxTests {
 
 #endif
 
+using namespace Catch::literals;
 
 ///////////////////////////////////////////////////////////////////////////////
+TEST_CASE( "A comparison that uses literals instead of the normal constructor", "[Approx]" ) {
+    double d = 1.23;
+
+    REQUIRE( d == 1.23_a );
+    REQUIRE( d != 1.22_a );
+    REQUIRE( -d == -1.23_a );
+
+    REQUIRE( d == 1.2_a .epsilon(.1) );
+    REQUIRE( d != 1.2_a .epsilon(.001) );
+    REQUIRE( d == 1_a .epsilon(.3) );
+}
+
 TEST_CASE( "Some simple comparisons between doubles", "[Approx]" ) {
     double d = 1.23;
 
     REQUIRE( d == Approx( 1.23 ) );
     REQUIRE( d != Approx( 1.22 ) );
     REQUIRE( d != Approx( 1.24 ) );
+
+    REQUIRE( d == 1.23_a );
+    REQUIRE( d != 1.22_a );
 
     REQUIRE( Approx( d ) == 1.23 );
     REQUIRE( Approx( d ) != 1.22 );
@@ -149,17 +165,13 @@ TEST_CASE("Approx setters validate their arguments", "[Approx]") {
     REQUIRE_NOTHROW(Approx(0).margin(0));
     REQUIRE_NOTHROW(Approx(0).margin(1234656));
 
-#if CATCH_CONFIG_USE_EXCEPTIONS
     REQUIRE_THROWS_AS(Approx(0).margin(-2), std::domain_error);
-#endif
 
     REQUIRE_NOTHROW(Approx(0).epsilon(0));
     REQUIRE_NOTHROW(Approx(0).epsilon(1));
 
-#if CATCH_CONFIG_USE_EXCEPTIONS
     REQUIRE_THROWS_AS(Approx(0).epsilon(-0.001), std::domain_error);
     REQUIRE_THROWS_AS(Approx(0).epsilon(1.0001), std::domain_error);
-#endif
 }
 
 TEST_CASE("Default scale is invisible to comparison", "[Approx]") {

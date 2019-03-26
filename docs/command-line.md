@@ -24,6 +24,7 @@
 [Usage](#usage)<br>
 [Specify the section to run](#specify-the-section-to-run)<br>
 [Filenames as tags](#filenames-as-tags)<br>
+[Override output colouring](#override-output-colouring)<br>
 
 Catch works quite nicely without any command line options at all - but for those times when you want greater control the following options are available.
 Click one of the followings links to take you straight to that option - or scroll on to browse the available options.
@@ -57,6 +58,7 @@ Click one of the followings links to take you straight to that option - or scrol
 <a href="#libidentify">                                 `    --libidentify`</a><br />
 <a href="#wait-for-keypress">                           `    --wait-for-keypress`</a><br />
 <a href="#benchmark-resolution-multiple">               `    --benchmark-resolution-multiple`</a><br />
+<a href="#use-colour">                                  `    --use-colour`</a><br />
 
 </br>
 
@@ -78,7 +80,7 @@ Wildcards consist of the `*` character at the beginning and/or end of test case 
 
 Test specs are case insensitive.
 
-If a spec is prefixed with `exclude:` or the `~` character then the pattern matches an exclusion. This means that tests matching the pattern are excluded from the set - even if a prior inclusion spec included them. Subsequent inclusion specs will take precendence, however.
+If a spec is prefixed with `exclude:` or the `~` character then the pattern matches an exclusion. This means that tests matching the pattern are excluded from the set - even if a prior inclusion spec included them. Subsequent inclusion specs will take precedence, however.
 Inclusions and exclusions are evaluated in left-to-right order.
 
 Test case examples:
@@ -94,7 +96,7 @@ a* ~ab* abc             Matches all tests that start with 'a', except those that
 </pre>
 
 Names within square brackets are interpreted as tags.
-A series of tags form an AND expression wheras a comma-separated sequence forms an OR expression. e.g.:
+A series of tags form an AND expression whereas a comma-separated sequence forms an OR expression. e.g.:
 
 <pre>[one][two],[three]</pre>
 This matches all tests tagged `[one]` and `[two]`, as well as all tests tagged `[three]`
@@ -122,7 +124,9 @@ The JUnit reporter is an xml format that follows the structure of the JUnit XML 
 ## Breaking into the debugger
 <pre>-b, --break</pre>
 
-In some IDEs (currently XCode and Visual Studio) it is possible for Catch to break into the debugger on a test failure. This can be very helpful during debug sessions - especially when there is more than one path through a particular test.
+Under most debuggers Catch2 is capable of automatically breaking on a test
+failure. This allows the user to see the current state of the test during
+failure.
 
 <a id="showing-results-for-successful-tests"></a>
 ## Showing results for successful tests
@@ -192,9 +196,16 @@ This option transforms tabs and newline characters into ```\t``` and ```\n``` re
 ## Warnings
 <pre>-w, --warn &lt;warning name></pre>
 
-Enables reporting of warnings (only one, at time of this writing). If a warning is issued it fails the test.
+Enables reporting of suspicious test states. There are currently two
+available warnings
 
-The ony available warning, presently, is ```NoAssertions```. This warning fails a test case, or (leaf) section if no assertions (```REQUIRE```/ ```CHECK``` etc) are encountered.
+```
+    NoAssertions   // Fail test case / leaf section if no assertions
+                   // (e.g. `REQUIRE`) is encountered.
+    NoTests        // Return non-zero exit code when no test cases were run
+                   // Also calls reporter's noMatchingTestCases method
+```
+
 
 <a id="reporting-timings"></a>
 ## Reporting timings
@@ -262,7 +273,7 @@ either before running any tests, after running all tests - or both, depending on
 
 When running benchmarks the clock resolution is estimated. Benchmarks are then run for exponentially increasing
 numbers of iterations until some multiple of the estimated resolution is exceed. By default that multiple is 100, but 
-it can be overriden here.
+it can be overridden here.
 
 <a id="usage"></a>
 ## Usage
@@ -322,6 +333,16 @@ filename it is found in, with any extension stripped, prefixed with the `#` char
 
 So, for example,  tests within the file `~\Dev\MyProject\Ferrets.cpp` would be tagged `[#Ferrets]`.
 
+<a id="use-colour"></a>
+## Override output colouring
+<pre>--use-colour &lt;yes|no|auto&gt;</pre>
+
+Catch colours output for terminals, but omits colouring when it detects that
+output is being sent to a pipe. This is done to avoid interfering with automated
+processing of output.
+
+`--use-colour yes` forces coloured output, `--use-colour no` disables coloured
+output. The default behaviour is `--use-colour auto`.
 
 ---
 

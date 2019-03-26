@@ -13,7 +13,7 @@
 #include "../internal/catch_tostring.h"
 #include "../internal/catch_reporter_registrars.hpp"
 
-#include <assert.h>
+#include <cassert>
 #include <sstream>
 #include <ctime>
 #include <algorithm>
@@ -62,6 +62,7 @@ namespace Catch {
             xml( _config.stream() )
         {
             m_reporterPrefs.shouldRedirectStdOut = true;
+            m_reporterPrefs.shouldReportAllAssertions = true;
         }
 
     JunitReporter::~JunitReporter() {}
@@ -75,6 +76,13 @@ namespace Catch {
     void JunitReporter::testRunStarting( TestRunInfo const& runInfo )  {
         CumulativeReporterBase::testRunStarting( runInfo );
         xml.startElement( "testsuites" );
+        if( m_config->rngSeed() != 0 ) {
+            xml.startElement( "properties" );
+            xml.scopedElement( "property" )
+                .writeAttribute( "name", "random-seed" )
+                .writeAttribute( "value", m_config->rngSeed() );
+            xml.endElement();
+        }
     }
 
     void JunitReporter::testGroupStarting( GroupInfo const& groupInfo ) {

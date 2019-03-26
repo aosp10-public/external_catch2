@@ -28,7 +28,7 @@ namespace Catch {
                 break;
             case RunTests::InRandomOrder:
                 seedRng( config );
-                RandomNumberGenerator::shuffle( sorted );
+                std::shuffle( sorted.begin(), sorted.end(), rng() );
                 break;
             case RunTests::InDeclarationOrder:
                 // already in declaration order
@@ -96,7 +96,7 @@ namespace Catch {
         m_testAsFunction();
     }
 
-    std::string extractClassName( std::string const& classOrQualifiedMethodName ) {
+    std::string extractClassName( StringRef const& classOrQualifiedMethodName ) {
         std::string className = classOrQualifiedMethodName;
         if( startsWith( className, '&' ) )
         {

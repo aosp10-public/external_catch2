@@ -1,6 +1,12 @@
 <a id="top"></a>
 # String conversions
 
+**Contents**<br>
+[operator << overload for std::ostream](#operator--overload-for-stdostream)<br>
+[Catch::StringMaker specialisation](#catchstringmaker-specialisation)<br>
+[Catch::is_range specialisation](#catchis_range-specialisation)<br>
+[Exceptions](#exceptions)<br>
+
 Catch needs to be able to convert types you use in assertions and logging expressions into strings (for logging and reporting purposes).
 Most built-in or std types are supported out of the box but there are two ways that you can tell Catch how to convert your own types (or other, third-party types) into strings.
 
@@ -10,30 +16,30 @@ This is the standard way of providing string conversions in C++ - and the chance
 
 ```
 std::ostream& operator << ( std::ostream& os, T const& value ) {
-	os << convertMyTypeToString( value );
-	return os;
+    os << convertMyTypeToString( value );
+    return os;
 }
 ```
 
 (where ```T``` is your type and ```convertMyTypeToString``` is where you'll write whatever code is necessary to make your type printable - it doesn't have to be in another function).
 
-You should put this function in the same namespace as your type and have it declared before including Catch's header.
+You should put this function in the same namespace as your type, or the global namespace, and have it declared before including Catch's header.
 
-## Catch::StringMaker<T> specialisation
+## Catch::StringMaker specialisation
 If you don't want to provide an ```operator <<``` overload, or you want to convert your type differently for testing purposes, you can provide a specialization for `Catch::StringMaker<T>`:
 
 ```
 namespace Catch {
-	template<>
+    template<>
     struct StringMaker<T> {
-    	static std::string convert( T const& value ) {
-        	return convertMyTypeToString( value );
+        static std::string convert( T const& value ) {
+            return convertMyTypeToString( value );
         }
     };
 }
 ```
 
-## Catch::is_range<T> specialisation
+## Catch::is_range specialisation
 As a fallback, Catch attempts to detect if the type can be iterated
 (`begin(T)` and `end(T)` are valid) and if it can be, it is stringified
 as a range. For certain types this can lead to infinite recursion, so
@@ -56,7 +62,7 @@ By default all exceptions deriving from `std::exception` will be translated to s
 
 ```
 CATCH_TRANSLATE_EXCEPTION( MyType& ex ) {
-	return ex.message();
+    return ex.message();
 }
 ```
 

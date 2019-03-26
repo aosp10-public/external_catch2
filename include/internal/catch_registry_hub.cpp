@@ -14,6 +14,7 @@
 #include "catch_exception_translator_registry.h"
 #include "catch_tag_alias_registry.h"
 #include "catch_startup_exception_registry.h"
+#include "catch_singletons.hpp"
 
 namespace Catch {
 
@@ -30,7 +31,7 @@ namespace Catch {
             ITestCaseRegistry const& getTestCaseRegistry() const override {
                 return m_testCaseRegistry;
             }
-            IExceptionTranslatorRegistry& getExceptionTranslatorRegistry() override {
+            IExceptionTranslatorRegistry const& getExceptionTranslatorRegistry() const override {
                 return m_exceptionTranslatorRegistry;
             }
             ITagAliasRegistry const& getTagAliasRegistry() const override {
@@ -67,27 +68,19 @@ namespace Catch {
             TagAliasRegistry m_tagAliasRegistry;
             StartupExceptionRegistry m_exceptionRegistry;
         };
-
-        // Single, global, instance
-        RegistryHub*& getTheRegistryHub() {
-            static RegistryHub* theRegistryHub = nullptr;
-            if( !theRegistryHub )
-                theRegistryHub = new RegistryHub();
-            return theRegistryHub;
-        }
     }
 
-    IRegistryHub& getRegistryHub() {
-        return *getTheRegistryHub();
+    using RegistryHubSingleton = Singleton<RegistryHub, IRegistryHub, IMutableRegistryHub>;
+
+    IRegistryHub const& getRegistryHub() {
+        return RegistryHubSingleton::get();
     }
     IMutableRegistryHub& getMutableRegistryHub() {
-        return *getTheRegistryHub();
+        return RegistryHubSingleton::getMutable();
     }
     void cleanUp() {
-        delete getTheRegistryHub();
-        getTheRegistryHub() = nullptr;
+        cleanupSingletons();
         cleanUpContext();
-        ReusableStringStream::cleanup();
     }
     std::string translateActiveException() {
         return getRegistryHub().getExceptionTranslatorRegistry().translateActiveException();

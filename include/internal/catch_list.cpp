@@ -12,6 +12,7 @@
 #include "catch_interfaces_reporter.h"
 #include "catch_interfaces_testcase.h"
 
+#include "catch_context.h"
 #include "catch_stream.h"
 #include "catch_text.h"
 
@@ -28,11 +29,10 @@ namespace Catch {
 
     std::size_t listTests( Config const& config ) {
         TestSpec testSpec = config.testSpec();
-        if( config.testSpec().hasFilters() )
+        if( config.hasTestFilters() )
             Catch::cout() << "Matching test cases:\n";
         else {
             Catch::cout() << "All available test cases:\n";
-            testSpec = TestSpecParser( ITagAliasRegistry::get() ).parse( "*" ).testSpec();
         }
 
         auto matchedTestCases = filterTests( getAllTestCasesSorted( config ), testSpec, config );
@@ -54,7 +54,7 @@ namespace Catch {
                 Catch::cout() << Column( testCaseInfo.tagsAsString() ).indent( 6 ) << "\n";
         }
 
-        if( !config.testSpec().hasFilters() )
+        if( !config.hasTestFilters() )
             Catch::cout() << pluralise( matchedTestCases.size(), "test case" ) << '\n' << std::endl;
         else
             Catch::cout() << pluralise( matchedTestCases.size(), "matching test case" ) << '\n' << std::endl;
@@ -63,8 +63,6 @@ namespace Catch {
 
     std::size_t listTestsNamesOnly( Config const& config ) {
         TestSpec testSpec = config.testSpec();
-        if( !config.testSpec().hasFilters() )
-            testSpec = TestSpecParser( ITagAliasRegistry::get() ).parse( "*" ).testSpec();
         std::size_t matchedTests = 0;
         std::vector<TestCase> matchedTestCases = filterTests( getAllTestCasesSorted( config ), testSpec, config );
         for( auto const& testCaseInfo : matchedTestCases ) {
@@ -94,11 +92,10 @@ namespace Catch {
 
     std::size_t listTags( Config const& config ) {
         TestSpec testSpec = config.testSpec();
-        if( config.testSpec().hasFilters() )
+        if( config.hasTestFilters() )
             Catch::cout() << "Tags for matching test cases:\n";
         else {
             Catch::cout() << "All available tags:\n";
-            testSpec = TestSpecParser( ITagAliasRegistry::get() ).parse( "*" ).testSpec();
         }
 
         std::map<std::string, TagInfo> tagCounts;
@@ -128,7 +125,7 @@ namespace Catch {
         return tagCounts.size();
     }
 
-    std::size_t listReporters( Config const& /*config*/ ) {
+    std::size_t listReporters() {
         Catch::cout() << "Available reporters:\n";
         IReporterRegistry::FactoryMap const& factories = getRegistryHub().getReporterRegistry().getFactories();
         std::size_t maxNameLen = 0;
@@ -150,16 +147,17 @@ namespace Catch {
         return factories.size();
     }
 
-    Option<std::size_t> list( Config const& config ) {
+    Option<std::size_t> list( std::shared_ptr<Config> const& config ) {
         Option<std::size_t> listedCount;
-        if( config.listTests() )
-            listedCount = listedCount.valueOr(0) + listTests( config );
-        if( config.listTestNamesOnly() )
-            listedCount = listedCount.valueOr(0) + listTestsNamesOnly( config );
-        if( config.listTags() )
-            listedCount = listedCount.valueOr(0) + listTags( config );
-        if( config.listReporters() )
-            listedCount = listedCount.valueOr(0) + listReporters( config );
+        getCurrentMutableContext().setConfig( config );
+        if( config->listTests() )
+            listedCount = listedCount.valueOr(0) + listTests( *config );
+        if( config->listTestNamesOnly() )
+            listedCount = listedCount.valueOr(0) + listTestsNamesOnly( *config );
+        if( config->listTags() )
+            listedCount = listedCount.valueOr(0) + listTags( *config );
+        if( config->listReporters() )
+            listedCount = listedCount.valueOr(0) + listReporters();
         return listedCount;
     }
 

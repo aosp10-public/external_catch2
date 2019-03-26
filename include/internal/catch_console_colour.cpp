@@ -160,7 +160,8 @@ namespace {
 
     private:
         void setColour( const char* _escapeCode ) {
-            Catch::cout() << '\033' << _escapeCode;
+            getCurrentContext().getConfig()->stream()
+                << '\033' << _escapeCode;
         }
     };
 
@@ -169,7 +170,12 @@ namespace {
 #ifdef CATCH_PLATFORM_MAC
             !isDebuggerActive() &&
 #endif
-            isatty(STDOUT_FILENO);
+#if !(defined(__DJGPP__) && defined(__STRICT_ANSI__))
+            isatty(STDOUT_FILENO)
+#else
+            false
+#endif
+            ;
     }
     IColourImpl* platformColourInstance() {
         ErrnoGuard guard;
