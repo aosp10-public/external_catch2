@@ -6,8 +6,10 @@
  *  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
  */
 
-#include "catch_assertionhandler.h"
 #include "catch_exception_translator_registry.h"
+#include "catch_assertionhandler.h"
+#include "catch_compiler_capabilities.h"
+#include "catch_enforce.h"
 
 #ifdef __OBJC__
 #import "Foundation/Foundation.h"
@@ -22,8 +24,9 @@ namespace Catch {
         m_translators.push_back( std::unique_ptr<const IExceptionTranslator>( translator ) );
     }
 
+#if !defined(CATCH_CONFIG_DISABLE_EXCEPTIONS)
     std::string ExceptionTranslatorRegistry::translateActiveException() const {
-        CATCH_INTERNAL_TRY {
+        try {
 #ifdef __OBJC__
             // In Objective-C try objective-c exceptions first
             @try {
@@ -47,27 +50,40 @@ namespace Catch {
             return tryTranslators();
 #endif
         }
-        CATCH_INTERNAL_CATCH_UNNAMED( TestFailureException& ) {
+        catch( TestFailureException& ) {
             std::rethrow_exception(std::current_exception());
         }
-        CATCH_INTERNAL_CATCH( std::exception&, ex ) {
+        catch( std::exception& ex ) {
             return ex.what();
         }
-        CATCH_INTERNAL_CATCH( std::string&, msg ) {
+        catch( std::string& msg ) {
             return msg;
         }
-        CATCH_INTERNAL_CATCH( const char*, msg ) {
+        catch( const char* msg ) {
             return msg;
         }
-        CATCH_INTERNAL_CATCH_ALL() {
+        catch(...) {
             return "Unknown exception";
         }
     }
 
     std::string ExceptionTranslatorRegistry::tryTranslators() const {
-        if( m_translators.empty() )
+        if (m_translators.empty()) {
             std::rethrow_exception(std::current_exception());
-        else
-            return m_translators[0]->translate( m_translators.begin()+1, m_translators.end() );
+        } else {
+            return m_translators[0]->translate(m_translators.begin() + 1, m_translators.end());
+        }
     }
+
+#else // ^^ Exceptions are enabled // Exceptions are disabled vv
+    std::string ExceptionTranslatorRegistry::translateActiveException() const {
+        CATCH_INTERNAL_ERROR("Attempted to translate active exception under CATCH_CONFIG_DISABLE_EXCEPTIONS!");
+    }
+
+    std::string ExceptionTranslatorRegistry::tryTranslators() const {
+        CATCH_INTERNAL_ERROR("Attempted to use exception translators under CATCH_CONFIG_DISABLE_EXCEPTIONS!");
+    }
+#endif
+
+
 }

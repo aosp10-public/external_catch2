@@ -111,8 +111,6 @@ public:
     void print() const {
         printSourceInfo();
         if (stats.totals.assertions.total() > 0) {
-            if (result.isOk())
-                stream << '\n';
             printResultType();
             printOriginalExpression();
             printReconstructedExpression();
@@ -247,7 +245,7 @@ public:
         case Unit::Nanoseconds:
             return "ns";
         case Unit::Microseconds:
-            return "µs";
+            return "us";
         case Unit::Milliseconds:
             return "ms";
         case Unit::Seconds:

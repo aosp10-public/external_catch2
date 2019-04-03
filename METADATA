@@ -13,7 +13,7 @@ third_party {
     type: GIT
     value: "https://github.com/catchorg/Catch2.git"
   }
-  version: "62dae592c330ab74cea30c897255ee9518639c3f"
-  last_upgrade_date { year: 2018 month: 2 day: 6 }
+  version: "v2.7.0"
+  last_upgrade_date { year: 2019 month: 3 day: 7 }
   license_type: NOTICE
 }

@@ -12,15 +12,16 @@
 #include <stdexcept>
 
 #ifdef _MSC_VER
-#pragma warning(disable:4702) // Unreachable code -- uncoditional throws and so on
+#pragma warning(disable:4702) // Unreachable code -- unconditional throws and so on
 #endif
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wweak-vtables"
 #pragma clang diagnostic ignored "-Wmissing-noreturn"
+#pragma clang diagnostic ignored "-Wunreachable-code"
 #endif
 
-#if CATCH_CONFIG_USE_EXCEPTIONS
+#if !defined(CATCH_CONFIG_DISABLE_EXCEPTIONS)
 // Cannot use try/catch keywords with -fno-exceptions.
 // Even if an exception was to be "thrown" it would just call std::terminate instead.
 
@@ -157,6 +158,15 @@ TEST_CASE( "Custom exceptions can be translated when testing for throwing as som
 TEST_CASE( "Unexpected exceptions can be translated", "[.][failing][!throws]"  ) {
     throw double( 3.14 );
 }
+
+TEST_CASE("Thrown string literals are translated", "[.][failing][!throws]") {
+    throw "For some reason someone is throwing a string literal!";
+}
+
+TEST_CASE("thrown std::strings are translated", "[.][failing][!throws]") {
+    throw std::string{ "Why would you throw a std::string?" };
+}
+
 
 #ifndef CATCH_CONFIG_DISABLE_MATCHERS
 

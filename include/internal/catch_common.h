@@ -22,6 +22,10 @@
 #include <string>
 #include <cstdint>
 
+// We need a dummy global operator<< so we can bring it into Catch namespace later
+struct Catch_global_namespace_dummy {};
+std::ostream& operator<<(std::ostream&, Catch_global_namespace_dummy);
+
 namespace Catch {
 
     struct CaseSensitive { enum Choice {
@@ -48,10 +52,10 @@ namespace Catch {
             line( _line )
         {}
 
-        SourceLineInfo( SourceLineInfo const& other )        = default;
-        SourceLineInfo( SourceLineInfo && )                  = default;
-        SourceLineInfo& operator = ( SourceLineInfo const& ) = default;
-        SourceLineInfo& operator = ( SourceLineInfo && )     = default;
+        SourceLineInfo( SourceLineInfo const& other )            = default;
+        SourceLineInfo& operator = ( SourceLineInfo const& )     = default;
+        SourceLineInfo( SourceLineInfo&& )              noexcept = default;
+        SourceLineInfo& operator = ( SourceLineInfo&& ) noexcept = default;
 
         bool empty() const noexcept;
         bool operator == ( SourceLineInfo const& other ) const noexcept;
@@ -62,6 +66,11 @@ namespace Catch {
     };
 
     std::ostream& operator << ( std::ostream& os, SourceLineInfo const& info );
+
+    // Bring in operator<< from global namespace into Catch namespace
+    // This is necessary because the overload of operator<< above makes
+    // lookup stop at namespace Catch
+    using ::operator<<;
 
     // Use this in variadic streaming macros to allow
     //    >> +StreamEndStop
@@ -74,40 +83,10 @@ namespace Catch {
     T const& operator + ( T const& value, StreamEndStop ) {
         return value;
     }
-
-
-    // A replacement for the "throw" keyword which is illegal when
-    // exceptions are disabled with -fno-exceptions.
-    struct Exception {
-        template <typename E>
-        [[noreturn]] static void doThrow(E&& e) {
-#if CATCH_CONFIG_USE_EXCEPTIONS
-            throw std::forward<E>(e);
-#else
-            // "throw" keyword is unsupported when exceptions are disabled.
-            // Immediately terminate instead.
-            (void)e;  // error: unused parameter 'e' [-Werror,-Wunused-parameter]
-            std::terminate();
-#endif
-        }
-    };
 }
 
 #define CATCH_INTERNAL_LINEINFO \
     ::Catch::SourceLineInfo( __FILE__, static_cast<std::size_t>( __LINE__ ) )
-
-#if CATCH_CONFIG_USE_EXCEPTIONS
-#  define CATCH_INTERNAL_TRY try
-#  define CATCH_INTERNAL_CATCH( type, var) catch( type var )
-#  define CATCH_INTERNAL_CATCH_UNNAMED( type ) catch( type )
-#  define CATCH_INTERNAL_CATCH_ALL() catch( ... )
-#else
-// 'try' and 'catch' (and 'throw') keywords are illegal with -fno-exceptions.
-#  define CATCH_INTERNAL_TRY if ((true))
-#  define CATCH_INTERNAL_CATCH( typ, var ) while ((false)) for ( typename std::remove_reference<typ>::type var ; ; )
-#  define CATCH_INTERNAL_CATCH_UNNAMED( type ) while ((false))
-#  define CATCH_INTERNAL_CATCH_ALL() while ((false))
-#endif
 
 #endif // TWOBLUECUBES_CATCH_COMMON_H_INCLUDED
 

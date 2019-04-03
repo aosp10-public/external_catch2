@@ -9,9 +9,8 @@
 #include "catch.hpp"
 #include "internal/catch_tag_alias_registry.h"
 
-
 TEST_CASE( "Tag alias can be registered against tag patterns" ) {
-#if CATCH_CONFIG_USE_EXCEPTIONS
+#if !defined(CATCH_CONFIG_DISABLE_EXCEPTIONS)
 
     Catch::TagAliasRegistry registry;
 

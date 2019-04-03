@@ -10,7 +10,7 @@
 // Let Catch provide the required interfaces:
 #define CATCH_CONFIG_EXTERNAL_INTERFACES
 
-#include "catch.hpp"
+#include <catch2/catch.hpp>
 #include <iostream>
 
 // -----------------------------------------------------------------------
@@ -187,8 +187,7 @@ void print( std::ostream& os, int const level, std::string const& title, Catch::
 
 void print( std::ostream& os, int const level, std::string const& title, Catch::SectionInfo const& info ) {
     os << ws(level  ) << title << ":\n"
-       << ws(level+1) << "- name: "         << info.name << "\n"
-       << ws(level+1) << "- description: '" << info.description << "'\n";
+       << ws(level+1) << "- name: "         << info.name << "\n";
     print( os, level+1 , "- lineInfo", info.lineInfo );
 }
 
@@ -388,16 +387,16 @@ TEST_CASE( "2: Testcase with sections", "[tag-A][tag-B]" ) {
     REQUIRE( i == 42 );
 
     SECTION("Section 1") {
-        INFO("Section 1")
+        INFO("Section 1");
         i = 7;
         SECTION("Section 1.1") {
-            INFO("Section 1.1")
+            INFO("Section 1.1");
             REQUIRE( i == 42 );
         }
     }
 
     SECTION("Section 2") {
-        INFO("Section 2")
+        INFO("Section 2");
         REQUIRE( i == 42 );
     }
     WARN("At end of test case");

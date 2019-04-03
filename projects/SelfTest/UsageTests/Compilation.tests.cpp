@@ -5,7 +5,34 @@
  *  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
  */
 
+#include <type_traits>
+
+// Setup for #1403 -- look for global overloads of operator << for classes
+// in a different namespace.
+#include <ostream>
+
+namespace foo {
+    struct helper_1403 {
+        bool operator==(helper_1403) const { return true; }
+    };
+}
+
+namespace bar {
+    template <typename... Ts>
+    struct TypeList {};
+}
+
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wmissing-declarations"
+#endif
+std::ostream& operator<<(std::ostream& out, foo::helper_1403 const&) {
+    return out << "[1403 helper]";
+}
+///////////////////////////////
+
 #include "catch.hpp"
+
+#include <cstring>
 
 namespace { namespace CompilationTests {
 
@@ -41,7 +68,7 @@ namespace { namespace CompilationTests {
 
     void throws_int(bool b) {
         if (b) {
-#if CATCH_CONFIG_USE_EXCEPTIONS
+#if !defined(CATCH_CONFIG_DISABLE_EXCEPTIONS)
             throw 1;
 #else
             std::terminate();
@@ -54,10 +81,8 @@ namespace { namespace CompilationTests {
         int a = 3;
         REQUIRE(a == t);
         CHECK(a == t);
-#if CATCH_CONFIG_USE_EXCEPTIONS
         REQUIRE_THROWS(throws_int(true));
         CHECK_THROWS_AS(throws_int(true), int);
-#endif
         REQUIRE_NOTHROW(throws_int(false));
 #ifndef CATCH_CONFIG_DISABLE_MATCHERS
         REQUIRE_THAT("aaa", Catch::EndsWith("aaa"));
@@ -91,6 +116,9 @@ namespace { namespace CompilationTests {
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
+
+    template <typename, typename>
+    struct Fixture_1245 {};
 
 #endif
 
@@ -140,4 +168,36 @@ namespace { namespace CompilationTests {
         REQUIRE(t1 >= t2);
     }
 
+    // unsigned array
+    TEST_CASE("#1238") {
+        unsigned char uarr[] = "123";
+        CAPTURE(uarr);
+        signed char sarr[] = "456";
+        CAPTURE(sarr);
+
+        REQUIRE(std::memcmp(uarr, "123", sizeof(uarr)) == 0);
+        REQUIRE(std::memcmp(sarr, "456", sizeof(sarr)) == 0);
+    }
+
+    TEST_CASE_METHOD((Fixture_1245<int, int>), "#1245", "[compilation]") {
+        SUCCEED();
+    }
+
+    TEST_CASE("#1403", "[compilation]") {
+        ::foo::helper_1403 h1, h2;
+        REQUIRE(h1 == h2);
+    }
+
+    TEST_CASE("Optionally static assertions", "[compilation]") {
+        STATIC_REQUIRE( std::is_void<void>::value );
+        STATIC_REQUIRE_FALSE( std::is_void<int>::value );
+    }
+
+    TEST_CASE("#1548", "[compilation]") {
+        using namespace bar;
+        REQUIRE(std::is_same<TypeList<int>, TypeList<int>>::value);
+    }
+
 }} // namespace CompilationTests
+
+
